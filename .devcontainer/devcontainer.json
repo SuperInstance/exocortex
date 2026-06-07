@@ -1,0 +1,55 @@
+{
+  "name": "Exocortex Dev",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "exocortex",
+  "workspaceFolder": "/app",
+  "shutdownAction": "stopCompose",
+
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": true
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter",
+        "tamasfe.even-better-toml",
+        "redhat.vscode-yaml",
+        "humao.rest-client"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "editor.formatOnSave": true,
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter"
+        }
+      }
+    }
+  },
+
+  "forwardPorts": [9000, 8000],
+  "portsAttributes": {
+    "9000": {
+      "label": "Exocortex API",
+      "onAutoForward": "notify"
+    },
+    "8000": {
+      "label": "SurrealDB",
+      "onAutoForward": "silent"
+    }
+  },
+
+  "postCreateCommand": "pip install -e '.[dev]' 2>/dev/null || pip install -e .",
+  "remoteUser": "root"
+}

@@ -1,0 +1,37 @@
+services:
+  exocortex:
+    build: .
+    container_name: exocortex
+    ports:
+      - "9000:9000"
+    environment:
+      - EXOCORTEX_HOST=0.0.0.0
+      - EXOCORTEX_PORT=9000
+      - EXOCORTEX_DB_URL=http://surrealdb:8000
+      - SURREAL_USER=root
+      - SURREAL_PASS=root
+    depends_on:
+      surrealdb:
+        condition: service_healthy
+    volumes:
+      - exocortex-data:/app/data
+    restart: unless-stopped
+
+  surrealdb:
+    image: surrealdb/surrealdb:v2.1.4
+    container_name: surrealdb
+    command: start --user root --pass root file:///data/surreal.db
+    ports:
+      - "8000:8000"
+    volumes:
+      - surreal-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  exocortex-data:
+  surreal-data:
