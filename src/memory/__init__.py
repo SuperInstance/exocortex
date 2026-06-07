@@ -173,6 +173,19 @@ class MemoryLayer:
             logger.info(f"Memory tick: {stats}")
         return stats
 
+    async def get_random_memories(self, n: int = 10) -> list[MemoryEntry]:
+        """Sample random memories for dream cycle processing."""
+        import random
+        all_entries = list(self._warm.values()) + list(self._hot.values())
+        return random.sample(all_entries, min(n, len(all_entries)))
+
+    async def get_recent_memories(self, since: float, limit: int = 100) -> list[MemoryEntry]:
+        """Get memories created after a timestamp."""
+        return [
+            e for e in self._warm.values()
+            if e.created_at >= since
+        ][:limit]
+
     @property
     def stats(self) -> dict[str, int]:
         return {
