@@ -65,7 +65,7 @@ class CortexConfig:
         return cls(
             name=cortex.get("name", "default-cortex"),
             memory_backend=mem.get("backend", "memory"),
-            memory_retention_days=mem.get("retention", "30d").rstrip("d"),
+            memory_retention_days=float(mem.get("retention", "30d").rstrip("d")),
             embedding_dims=mem.get("embedding_dims", 384),
             hot_window_seconds=mem.get("hot_window_seconds", 60.0),
             warm_unreinforced_hours=mem.get("warm_unreinforced_hours", 24.0),
