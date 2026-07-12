@@ -63,11 +63,17 @@ def create_app(bus: CorticalBus, compute: ComputeEngine, memory: MemoryLayer) ->
     """Create the FastAPI app with all routes."""
     app = FastAPI(title="Exocortex", version="0.1.0")
 
+    import os as _os
+    _cors_origins = _os.environ.get("EXOCORTEX_CORS_ORIGINS", "").split(",")
+    _cors_origins = [o.strip() for o in _cors_origins if o.strip()]
+    if not _cors_origins:
+        _cors_origins = ["http://localhost:3000", "http://localhost:5173"]
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=_cors_origins,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type", "Authorization"],
     )
 
     # --- Core REST endpoints ---
