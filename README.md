@@ -39,6 +39,14 @@ Part of the [SuperInstance](https://github.com/SuperInstance) fleet ecosystem �
 - [🧮 constraint-tminus-bridge](https://github.com/SuperInstance/constraint-tminus-bridge) — Constraint networks for agent alignment
 - [🎻 symphony-orchestrator](https://github.com/SuperInstance/symphony-orchestrator) — Full stack orchestrator
 
+## Cross-Implementation
+
+This component exists in two languages:
+- **Python** (`pip install si-exocortex`) — [SuperInstance/exocortex](https://github.com/SuperInstance/exocortex)
+- **Rust** (`cargo add exocortex`) — [SuperInstance/exocortex-rs](https://github.com/SuperInstance/exocortex-rs)
+
+Both implement the same specification. Choose based on your runtime.
+
 ## License
 
 MIT
