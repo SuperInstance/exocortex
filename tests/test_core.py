@@ -239,3 +239,25 @@ def test_config_load_file():
     import pathlib
     config = CortexConfig.load(pathlib.Path(__file__).parent.parent / ".cortex.toml")
     assert config.name == "demo-cortex"
+
+
+def test_config_retention_days_is_float():
+    """Regression: retention must be parsed to a float, not left as a string.
+
+    The default config has no `retention` key, so the "30d" default was used.
+    Previously `.rstrip("d")` returned the string "30", which silently became
+    the value of a field typed `float`.
+    """
+    import pathlib
+    from src.config import _parse_duration_days
+
+    config = CortexConfig.load(pathlib.Path(__file__).parent.parent / ".cortex.toml")
+    assert isinstance(config.memory_retention_days, float)
+    assert config.memory_retention_days == 30.0
+
+    # Parser handles numbers and unit-suffixed strings
+    assert _parse_duration_days("30d") == 30.0
+    assert _parse_duration_days("30") == 30.0
+    assert _parse_duration_days(30) == 30.0
+    assert _parse_duration_days(30.5) == 30.5
+    assert _parse_duration_days("30.5d") == 30.5

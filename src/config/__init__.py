@@ -12,6 +12,27 @@ except ImportError:
     import tomli as tomllib  # type: ignore
 
 
+def _parse_duration_days(raw: Any) -> float:
+    """Parse a retention value into days as float.
+
+    Accepts a number ("30", 30, 30.0) or a string with an optional trailing
+    unit suffix, e.g. "30d", "30.5d". Always returns a float.
+    """
+    if isinstance(raw, (int, float)):
+        return float(raw)
+    text = str(raw).strip()
+    # Strip a single optional trailing duration unit (e.g. "30d" -> "30").
+    # Use a conservative suffix check rather than str.rstrip, which would
+    # wrongly collapse values like "30dd" and is order-dependent.
+    suffixes = ("d", "days", "day")
+    lowered = text.lower()
+    for suffix in suffixes:
+        if lowered.endswith(suffix):
+            text = text[: -len(suffix)].strip()
+            break
+    return float(text)
+
+
 @dataclass
 class CortexConfig:
     """The single source of truth for exocortex configuration."""
@@ -65,7 +86,7 @@ class CortexConfig:
         return cls(
             name=cortex.get("name", "default-cortex"),
             memory_backend=mem.get("backend", "memory"),
-            memory_retention_days=mem.get("retention", "30d").rstrip("d"),
+            memory_retention_days=_parse_duration_days(mem.get("retention", "30d")),
             embedding_dims=mem.get("embedding_dims", 384),
             hot_window_seconds=mem.get("hot_window_seconds", 60.0),
             warm_unreinforced_hours=mem.get("warm_unreinforced_hours", 24.0),
