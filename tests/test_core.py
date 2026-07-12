@@ -78,15 +78,22 @@ async def test_bus_publish_subscribe():
 
 @pytest.mark.asyncio
 async def test_bus_backpressure():
-    bus = CorticalBus(max_queue_size=5)
-    await bus.start()
+    """Regression: a full queue must shed events (publish returns False).
 
-    # Fill the queue
+    Previously this test published 10 events to a size-5 queue but never
+    checked the return value, so it passed regardless of whether backpressure
+    worked. Now we assert the first 5 are accepted and the overflow is shed.
+    """
+    bus = CorticalBus(max_queue_size=5)
+    # Don't start the dispatch loop, so the queue fills deterministically
+    # instead of being drained concurrently.
+    results = []
     for i in range(10):
         event = CortexEvent.new("test", "unit", importance=i / 10.0)
-        await bus.publish(event)
+        results.append(await bus.publish(event))
 
-    await bus.stop()
+    assert results[:5] == [True] * 5, "first 5 events should fit"
+    assert results[5:] == [False] * 5, "overflow events should be shed"
 
 
 # --- Compute Engine ---
