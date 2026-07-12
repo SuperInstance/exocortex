@@ -11,7 +11,7 @@ import time
 from collections import OrderedDict
 from typing import Any
 
-from ..core.types import MemoryEntry, Operation
+from ..core.types import MemoryEntry
 
 logger = logging.getLogger(__name__)
 

@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import signal
-import sys
 
 from .config import CortexConfig
 from .bus import CorticalBus
@@ -68,7 +66,7 @@ async def main(config: CortexConfig | None = None) -> None:
 
     # Launch everything
     logger.info(f"📡 Server: http://{config.host}:{config.port}")
-    logger.info(f"🔮 TUI: Plato's Cave")
+    logger.info("🔮 TUI: Plato's Cave")
 
     await asyncio.gather(
         server_instance.serve(),

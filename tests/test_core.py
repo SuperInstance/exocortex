@@ -1,19 +1,17 @@
 """Tests for the exocortex core."""
 
 import asyncio
-import math
 import time
 
 import pytest
 
 from src.core.types import (
-    CortexEvent, CortexRequest, Operation, ComputeTier,
-    Protocol, MemoryEntry, AgentInfo, Provenance,
+    CortexEvent, Operation, MemoryEntry, Provenance,
 )
 from src.bus import CorticalBus
 from src.compute import ComputeEngine
 from src.memory import MemoryLayer
-from src.shadows import render_shadow, ShadowColor, classify_color
+from src.shadows import render_shadow, ShadowColor
 from src.config import CortexConfig
 
 

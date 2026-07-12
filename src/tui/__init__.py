@@ -2,17 +2,15 @@
 
 from __future__ import annotations
 
-import asyncio
 from datetime import datetime
 from typing import TYPE_CHECKING
 
 from textual.app import App, ComposeResult
-from textual.containers import Container, Horizontal, Vertical
 from textual.widgets import Header, Footer, Static, RichLog
 from textual.reactive import reactive
 from rich.text import Text
 
-from ..core.types import CortexEvent, ShadowMode
+from ..core.types import CortexEvent
 from ..shadows import render_shadow, RenderedShadow, ShadowColor
 from ..bus import CorticalBus
 

@@ -16,10 +16,9 @@ import logging
 import math
 import time
 import uuid
-from collections import OrderedDict
 from typing import Any
 
-from . import MemoryLayer, LRU_MAX, HOT_WINDOW_SECONDS, WARM_UNREINFORCED_HOURS, COLD_CONFIDENCE_THRESHOLD
+from . import MemoryLayer, HOT_WINDOW_SECONDS, WARM_UNREINFORCED_HOURS
 
 logger = logging.getLogger(__name__)
 

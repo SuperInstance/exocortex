@@ -2,20 +2,17 @@
 
 from __future__ import annotations
 
-import time
-import uuid
 import logging
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Query as QueryParam
+from fastapi import FastAPI, Query as QueryParam
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from ..core.types import CortexRequest, CortexResponse, Operation, Protocol
+from ..core.types import Operation
 from ..bus import CorticalBus
 from ..compute import ComputeEngine
 from ..memory import MemoryLayer
-from ..shadows import render_shadow
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +71,6 @@ def create_app(bus: CorticalBus, compute: ComputeEngine, memory: MemoryLayer) ->
 
     @app.post("/api/v1/embed")
     async def embed(req: EmbedRequest) -> dict[str, Any]:
-        start = time.time()
         result = await compute.execute(Operation.EMBED, {
             "content": req.content, "dims": req.dims,
         })
@@ -201,7 +197,7 @@ def create_app(bus: CorticalBus, compute: ComputeEngine, memory: MemoryLayer) ->
         """Plain text remember."""
         result = await compute.execute(Operation.EMBED, {"content": req.content, "dims": 384})
         embedding = result.get("embedding", [])
-        entry = await memory.remember(req.content, embedding, req.agent_id, req.tags)
+        await memory.remember(req.content, embedding, req.agent_id, req.tags)
         await bus.emit("remember", req.agent_id, payload={"preview": req.content[:40]})
         return "remembered"
 

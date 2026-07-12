@@ -1,15 +1,14 @@
 """Tests for Phase 2: SurrealDB Backend, Dream Cycle, Resonance Engine."""
 
 import asyncio
-import math
 import time
 
 import pytest
 
-from src.core.types import CortexEvent, MemoryEntry
+from src.core.types import MemoryEntry
 from src.memory.surrealdb_backend import SurrealDBMemoryLayer, SurrealDBSchema, _cosine_similarity
-from src.compute.dream import DreamCycle, DreamCluster, KMeans, DreamReport, _euclidean_distance
-from src.core.resonance import ResonanceEngine, ResonanceHit, LearningEvent, ActiveQuery
+from src.compute.dream import DreamCycle, KMeans, DreamReport, _euclidean_distance
+from src.core.resonance import ResonanceEngine, LearningEvent
 
 
 # ============================================================================
@@ -76,7 +75,7 @@ async def test_surrealdb_backend_get_missing():
 async def test_surrealdb_backend_tick_cooling():
     """SurrealDB backend should cool memories from hot to cold."""
     layer = SurrealDBMemoryLayer()
-    entry = await layer.remember("aging memory", [0.5] * 384, "agent-1")
+    await layer.remember("aging memory", [0.5] * 384, "agent-1")
 
     # Force age it beyond warm threshold
     for e in layer._warm.values():

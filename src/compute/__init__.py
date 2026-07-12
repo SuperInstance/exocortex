@@ -54,8 +54,8 @@ class MicroNN:
         """Predict class + confidence."""
         logits = self.forward(x)
         # Softmax
-        max_l = max(logits)
-        exps = [math.exp(l - max_l) for l in logits]
+        max_logit = max(logits)
+        exps = [math.exp(logit - max_logit) for logit in logits]
         total = sum(exps)
         probs = [e / total for e in exps]
         best = max(range(len(probs)), key=lambda i: probs[i])
