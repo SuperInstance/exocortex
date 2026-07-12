@@ -1,6 +1,7 @@
 # exocortex
 
-[![License](https://img.shields.io/badge/license-MIT-blue)] [![SuperInstance](https://img.shields.io/badge/SuperInstance-Fleet-purple)] [![GitHub](https://img.shields.io/badge/GitHub-SuperInstance-lightgrey)]
+[![CI](https://github.com/SuperInstance/exocortex/actions/workflows/ci.yml/badge.svg)](https://github.com/SuperInstance/exocortex/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 🧠 Persistent cognitive substrate for multi-agent systems — S3-compatible memory, shadow rendering, tiered compute, ESP32 support
 
