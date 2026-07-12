@@ -96,6 +96,26 @@ async def test_bus_backpressure():
     assert results[5:] == [False] * 5, "overflow events should be shed"
 
 
+def test_bus_should_render_rate_limits_per_trace():
+    """Regression: should_render rate-limits events per trace_id.
+
+    An earlier version's logic contradicted its docstring (it claimed to
+    render a "summary" but returned False for everything past the threshold).
+    Now the first N events per trace return True and the rest return False.
+    """
+    bus = CorticalBus()
+    trace = "trace-abc"
+    rendered = []
+    for _ in range(8):
+        event = CortexEvent(event_type="test", source="unit", trace_id=trace)
+        rendered.append(bus.should_render(event))
+    # max_per_trace == 5 -> first 5 rendered, rest suppressed
+    assert rendered == [True] * 5 + [False] * 3
+    # A new trace starts fresh
+    other = CortexEvent(event_type="test", source="unit", trace_id="other")
+    assert bus.should_render(other) is True
+
+
 # --- Compute Engine ---
 
 @pytest.mark.asyncio
