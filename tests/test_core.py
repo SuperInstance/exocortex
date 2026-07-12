@@ -190,6 +190,22 @@ async def test_memory_query_by_tags():
     assert results[0].content == "garden data"
 
 
+@pytest.mark.asyncio
+async def test_get_random_memories_no_duplicates():
+    """Regression: get_random_memories must not return the same memory twice.
+
+    Every hot entry is also stored in warm, so concatenating tiers used to
+    yield duplicate samples (1 stored -> 2 returned).
+    """
+    memory = MemoryLayer()
+    await memory.remember("only one", [0.1] * 384, "test")
+
+    sampled = await memory.get_random_memories(10)
+    assert len(sampled) == 1
+    ids = [e.id for e in sampled]
+    assert len(ids) == len(set(ids))
+
+
 # --- Shadow Rendering ---
 
 def test_render_embed():
