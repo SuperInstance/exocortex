@@ -134,6 +134,25 @@ async def test_reflex_arc():
     assert anomaly["sigma"] > 3.0
 
 
+@pytest.mark.asyncio
+async def test_reflex_arc_reports_baseline_mean():
+    """Regression: anomaly 'mean' must be the baseline before contamination.
+
+    Previously the detail/mean reported the running mean *after* the anomalous
+    reading had been folded in (~29.0), not the baseline (~20.1) the anomaly
+    was actually measured against.
+    """
+    engine = ComputeEngine()
+    for v in [20.0, 21.0, 19.0, 20.5, 20.0, 21.0, 19.5, 20.0]:
+        await engine.reflex_check("temp", v)
+
+    baseline = sum([20.0, 21.0, 19.0, 20.5, 20.0, 21.0, 19.5, 20.0]) / 8
+    anomaly = await engine.reflex_check("temp", 100.0)
+    assert anomaly is not None
+    assert abs(anomaly["mean"] - baseline) < 0.01
+    assert "20.1" in anomaly["detail"]
+
+
 # --- Memory Layer ---
 
 @pytest.mark.asyncio
