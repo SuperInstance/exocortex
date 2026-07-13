@@ -54,8 +54,8 @@ class MicroNN:
         """Predict class + confidence."""
         logits = self.forward(x)
         # Softmax
-        max_l = max(logits)
-        exps = [math.exp(l - max_l) for l in logits]
+        max_logit = max(logits)
+        exps = [math.exp(logit - max_logit) for logit in logits]
         total = sum(exps)
         probs = [e / total for e in exps]
         best = max(range(len(probs)), key=lambda i: probs[i])
@@ -185,6 +185,9 @@ class ComputeEngine:
             z_score = abs(value - bl["mean"]) / std
 
             if z_score > 3.0:
+                # Capture the baseline this anomaly was measured against BEFORE
+                # we contaminate the running stats with the anomalous value.
+                baseline_mean = bl["mean"]
                 # Still update stats even for anomalies
                 new_mean = bl["mean"] + (value - bl["mean"]) / (n + 1)
                 new_var = ((n * bl["var"]) + (value - bl["mean"]) * (value - new_mean)) / (n + 1)
@@ -196,8 +199,8 @@ class ComputeEngine:
                     "source": source,
                     "value": value,
                     "sigma": z_score,
-                    "mean": new_mean,
-                    "detail": f"{source} = {value:.1f} ({z_score:.1f}σ from mean {bl['mean']:.1f})",
+                    "mean": baseline_mean,
+                    "detail": f"{source} = {value:.1f} ({z_score:.1f}σ from mean {baseline_mean:.1f})",
                 }
 
         # Update running stats

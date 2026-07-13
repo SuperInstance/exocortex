@@ -21,7 +21,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-from ..core.types import CortexEvent, MemoryEntry
+from ..core.types import CortexEvent
 
 logger = logging.getLogger(__name__)
 
@@ -251,7 +251,7 @@ class DreamCycle:
 
         clusters: list[DreamCluster] = []
         for ci in range(n_clusters):
-            member_indices = [i for i, l in enumerate(labels) if l == ci]
+            member_indices = [i for i, label in enumerate(labels) if label == ci]
             if not member_indices:
                 continue
             members = [embedded[i] for i in member_indices]
@@ -361,7 +361,6 @@ class DreamCycle:
         parts = []
 
         if report.clusters:
-            n_total = sum(len(c.memory_ids) for c in report.clusters)
             parts.append(f"Dreaming over {report.memories_sampled} memories")
             parts.append(f"into {len(report.clusters)} islands of thought")
 

@@ -16,10 +16,9 @@ import logging
 import math
 import time
 import uuid
-from collections import OrderedDict
 from typing import Any
 
-from . import MemoryLayer, LRU_MAX, HOT_WINDOW_SECONDS, WARM_UNREINFORCED_HOURS, COLD_CONFIDENCE_THRESHOLD
+from . import MemoryLayer, HOT_WINDOW_SECONDS, WARM_UNREINFORCED_HOURS
 
 logger = logging.getLogger(__name__)
 
@@ -452,10 +451,13 @@ class SurrealDBMemoryLayer(MemoryLayer):
             except Exception as e:
                 logger.warning(f"SurrealDB random sample failed: {e}")
 
-        # Fallback: sample from in-memory
+        # Fallback: sample from in-memory (dedupe by id — hot ⊂ warm)
         import random
-        all_entries = list(self._warm.values()) + list(self._hot.values())
-        return random.sample(all_entries, min(n, len(all_entries)))
+        by_id: dict[str, Any] = {}
+        for entry in list(self._warm.values()) + list(self._hot.values()) + list(self._cold.values()):
+            by_id[entry.id] = entry
+        unique = list(by_id.values())
+        return random.sample(unique, min(n, len(unique)))
 
     async def get_recent_memories(self, since: float, limit: int = 100) -> list[Any]:
         """Get memories created after a timestamp."""

@@ -59,16 +59,22 @@ class CorticalBus:
         return await self.publish(event)
 
     def should_render(self, event: CortexEvent) -> bool:
-        """Rate limit: max N events per trace_id."""
+        """Rate limit: render only the first N events per trace_id.
+
+        Returns True for the first ``_max_per_trace`` events of a trace and
+        False for every subsequent event, so a chatty trace cannot flood the
+        shadow wall.
+
+        NOTE: this is an opt-in filter — it is *not* invoked automatically by
+        the dispatch loop. Subscribers that want rate-limited shadows call it
+        explicitly. (An earlier version's comment claimed it would also render
+        a "summary" of the trace, but detecting the final event of a trace is
+        not possible here, so that was aspirational/incorrect.)
+        """
         trace = event.trace_id
-        self._trace_counts[trace] += 1
-        count = self._trace_counts[trace]
-        if count <= self._max_per_trace:
-            return True
-        # Always render the last one (summary)
-        if count == self._max_per_trace + 1:
-            return False  # skip middle, will show summary
-        return False
+        count = self._trace_counts[trace] + 1
+        self._trace_counts[trace] = count
+        return count <= self._max_per_trace
 
     async def start(self) -> None:
         """Start the bus dispatch loop."""

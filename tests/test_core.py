@@ -1,19 +1,17 @@
 """Tests for the exocortex core."""
 
 import asyncio
-import math
 import time
 
 import pytest
 
 from src.core.types import (
-    CortexEvent, CortexRequest, Operation, ComputeTier,
-    Protocol, MemoryEntry, AgentInfo, Provenance,
+    CortexEvent, Operation, MemoryEntry, Provenance,
 )
 from src.bus import CorticalBus
 from src.compute import ComputeEngine
 from src.memory import MemoryLayer
-from src.shadows import render_shadow, ShadowColor, classify_color
+from src.shadows import render_shadow, ShadowColor
 from src.config import CortexConfig
 
 
@@ -78,15 +76,42 @@ async def test_bus_publish_subscribe():
 
 @pytest.mark.asyncio
 async def test_bus_backpressure():
-    bus = CorticalBus(max_queue_size=5)
-    await bus.start()
+    """Regression: a full queue must shed events (publish returns False).
 
-    # Fill the queue
+    Previously this test published 10 events to a size-5 queue but never
+    checked the return value, so it passed regardless of whether backpressure
+    worked. Now we assert the first 5 are accepted and the overflow is shed.
+    """
+    bus = CorticalBus(max_queue_size=5)
+    # Don't start the dispatch loop, so the queue fills deterministically
+    # instead of being drained concurrently.
+    results = []
     for i in range(10):
         event = CortexEvent.new("test", "unit", importance=i / 10.0)
-        await bus.publish(event)
+        results.append(await bus.publish(event))
 
-    await bus.stop()
+    assert results[:5] == [True] * 5, "first 5 events should fit"
+    assert results[5:] == [False] * 5, "overflow events should be shed"
+
+
+def test_bus_should_render_rate_limits_per_trace():
+    """Regression: should_render rate-limits events per trace_id.
+
+    An earlier version's logic contradicted its docstring (it claimed to
+    render a "summary" but returned False for everything past the threshold).
+    Now the first N events per trace return True and the rest return False.
+    """
+    bus = CorticalBus()
+    trace = "trace-abc"
+    rendered = []
+    for _ in range(8):
+        event = CortexEvent(event_type="test", source="unit", trace_id=trace)
+        rendered.append(bus.should_render(event))
+    # max_per_trace == 5 -> first 5 rendered, rest suppressed
+    assert rendered == [True] * 5 + [False] * 3
+    # A new trace starts fresh
+    other = CortexEvent(event_type="test", source="unit", trace_id="other")
+    assert bus.should_render(other) is True
 
 
 # --- Compute Engine ---
@@ -134,6 +159,25 @@ async def test_reflex_arc():
     assert anomaly["sigma"] > 3.0
 
 
+@pytest.mark.asyncio
+async def test_reflex_arc_reports_baseline_mean():
+    """Regression: anomaly 'mean' must be the baseline before contamination.
+
+    Previously the detail/mean reported the running mean *after* the anomalous
+    reading had been folded in (~29.0), not the baseline (~20.1) the anomaly
+    was actually measured against.
+    """
+    engine = ComputeEngine()
+    for v in [20.0, 21.0, 19.0, 20.5, 20.0, 21.0, 19.5, 20.0]:
+        await engine.reflex_check("temp", v)
+
+    baseline = sum([20.0, 21.0, 19.0, 20.5, 20.0, 21.0, 19.5, 20.0]) / 8
+    anomaly = await engine.reflex_check("temp", 100.0)
+    assert anomaly is not None
+    assert abs(anomaly["mean"] - baseline) < 0.01
+    assert "20.1" in anomaly["detail"]
+
+
 # --- Memory Layer ---
 
 @pytest.mark.asyncio
@@ -169,6 +213,22 @@ async def test_memory_query_by_tags():
     results = await memory.query(["garden"])
     assert len(results) == 1
     assert results[0].content == "garden data"
+
+
+@pytest.mark.asyncio
+async def test_get_random_memories_no_duplicates():
+    """Regression: get_random_memories must not return the same memory twice.
+
+    Every hot entry is also stored in warm, so concatenating tiers used to
+    yield duplicate samples (1 stored -> 2 returned).
+    """
+    memory = MemoryLayer()
+    await memory.remember("only one", [0.1] * 384, "test")
+
+    sampled = await memory.get_random_memories(10)
+    assert len(sampled) == 1
+    ids = [e.id for e in sampled]
+    assert len(ids) == len(set(ids))
 
 
 # --- Shadow Rendering ---
@@ -239,3 +299,25 @@ def test_config_load_file():
     import pathlib
     config = CortexConfig.load(pathlib.Path(__file__).parent.parent / ".cortex.toml")
     assert config.name == "demo-cortex"
+
+
+def test_config_retention_days_is_float():
+    """Regression: retention must be parsed to a float, not left as a string.
+
+    The default config has no `retention` key, so the "30d" default was used.
+    Previously `.rstrip("d")` returned the string "30", which silently became
+    the value of a field typed `float`.
+    """
+    import pathlib
+    from src.config import _parse_duration_days
+
+    config = CortexConfig.load(pathlib.Path(__file__).parent.parent / ".cortex.toml")
+    assert isinstance(config.memory_retention_days, float)
+    assert config.memory_retention_days == 30.0
+
+    # Parser handles numbers and unit-suffixed strings
+    assert _parse_duration_days("30d") == 30.0
+    assert _parse_duration_days("30") == 30.0
+    assert _parse_duration_days(30) == 30.0
+    assert _parse_duration_days(30.5) == 30.5
+    assert _parse_duration_days("30.5d") == 30.5

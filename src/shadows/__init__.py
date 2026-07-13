@@ -5,12 +5,10 @@
 
 from __future__ import annotations
 
-import math
-import time
 from dataclasses import dataclass
 from enum import Enum
 
-from ..core.types import CortexEvent, Operation, ShadowMode
+from ..core.types import CortexEvent, Operation
 
 
 class ShadowColor(str, Enum):

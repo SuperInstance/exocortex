@@ -11,7 +11,7 @@ import time
 from collections import OrderedDict
 from typing import Any
 
-from ..core.types import MemoryEntry, Operation
+from ..core.types import MemoryEntry
 
 logger = logging.getLogger(__name__)
 
@@ -176,8 +176,13 @@ class MemoryLayer:
     async def get_random_memories(self, n: int = 10) -> list[MemoryEntry]:
         """Sample random memories for dream cycle processing."""
         import random
-        all_entries = list(self._warm.values()) + list(self._hot.values())
-        return random.sample(all_entries, min(n, len(all_entries)))
+        # Dedupe by id: every hot entry is also present in warm, so naively
+        # concatenating the tiers yields duplicate samples.
+        by_id: dict[str, MemoryEntry] = {}
+        for entry in list(self._warm.values()) + list(self._hot.values()) + list(self._cold.values()):
+            by_id[entry.id] = entry
+        unique = list(by_id.values())
+        return random.sample(unique, min(n, len(unique)))
 
     async def get_recent_memories(self, since: float, limit: int = 100) -> list[MemoryEntry]:
         """Get memories created after a timestamp."""
