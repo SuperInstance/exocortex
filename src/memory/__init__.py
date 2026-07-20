@@ -197,7 +197,7 @@ class MemoryLayer:
             "hot": len(self._hot),
             "warm": len(self._warm),
             "cold": len(self._cold),
-            "total": len(self._hot) + len(self._warm) + len(self._cold),
+            "total": len(set(self._hot) | set(self._warm) | set(self._cold)),
         }
 
 
