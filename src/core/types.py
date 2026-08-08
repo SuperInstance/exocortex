@@ -76,10 +76,10 @@ class CortexEvent:
 
     @staticmethod
     def new(event_type: str, source: str, **kwargs: Any) -> CortexEvent:
+        kwargs.setdefault("trace_id", uuid.uuid4().hex[:12])
         return CortexEvent(
             event_type=event_type,
             source=source,
-            trace_id=uuid.uuid4().hex[:12],
             **kwargs,
         )
 
